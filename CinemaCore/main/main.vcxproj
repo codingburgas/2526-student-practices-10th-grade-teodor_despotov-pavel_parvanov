@@ -139,10 +139,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CinemaCore\Cinema.vcxproj">
-      <Project>{280fac21-8e5b-f685-2f06-aa8065cde2eb}</Project>
+    <ProjectReference Include="..\StaticLib1\StaticLib1.vcxproj">
+      <Project>{be45bb06-e1a5-48f9-ad76-de0f50531b28}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\CinemaCore\Tickets\Tickets.vcxproj">
+    <ProjectReference Include="..\Tickets\Tickets.vcxproj">
       <Project>{99171f92-6050-4c80-aed9-426c7632beb6}</Project>
     </ProjectReference>
   </ItemGroup>
