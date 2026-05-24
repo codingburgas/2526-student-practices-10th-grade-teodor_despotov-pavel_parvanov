@@ -1,5 +1,6 @@
 ﻿#include "raylib.h"
 #include "../Tickets/Login.h"
+#include "../StaticLib1/Movie.h"
 
 using namespace std;
 
@@ -46,8 +47,7 @@ static bool DrawMenuButton(int x, int y, int w, int h,
     DrawCircle(x + 36, y + h / 2, 16, circleCol);
     DrawText(icon,
         x + 36 - MeasureText(icon, 16) / 2,
-        y + h / 2 - 8,
-        16,
+        y + h / 2 - 8, 16,
         locked ? TEXT_MUTED : ACCENT_GOLD);
 
     DrawText(label, x + 65, y + (h - 20) / 2, 20, txt);
@@ -110,7 +110,8 @@ int main() {
     InitWindow(800, 600, "Cinema Booking System");
     SetTargetFPS(60);
 
-    User currentUser = runCinemaAuthSystem();
+    User          currentUser = runCinemaAuthSystem();
+    vector<Movie> movies = GetAllMovies();
 
     if (!currentUser.isLogged) {
         CloseWindow();
@@ -134,7 +135,6 @@ int main() {
             };
 
             AdminItem adminItems[7];
-
             adminItems[0].icon = "+"; adminItems[0].label = "Add Movie";
             adminItems[0].base = BTN_ADMIN; adminItems[0].hover = BTN_ADMIN_H;
 
@@ -166,6 +166,7 @@ int main() {
                     adminItems[i].icon, adminItems[i].label,
                     adminItems[i].base, adminItems[i].hover, false);
                 if (clicked) {
+                    if (i == 0) RunMovieSearchScreen(movies);
                 }
             }
 
@@ -188,7 +189,6 @@ int main() {
             };
 
             MenuItem items[6];
-
             items[0].icon = "?";  items[0].label = "Search Movies";
             items[0].base = BTN_BLUE; items[0].hover = BTN_BLUE_H;
             items[0].locked = false;
@@ -224,6 +224,7 @@ int main() {
                     items[i].base, items[i].hover,
                     items[i].locked);
                 if (clicked) {
+                    if (i == 0) RunMovieSearchScreen(movies);
                 }
             }
 
@@ -236,6 +237,5 @@ int main() {
 
         EndDrawing();
     }
-
     CloseWindow();
 }
