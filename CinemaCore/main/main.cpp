@@ -1,6 +1,7 @@
 ﻿#include "raylib.h"
 #include "../Tickets/Login.h"
 #include "../StaticLib1/Movie.h"
+#include "../StaticLib1/Show.h"
 
 using namespace std;
 
@@ -112,6 +113,7 @@ int main() {
 
     User          currentUser = runCinemaAuthSystem();
     vector<Movie> movies = GetAllMovies();
+    vector<Show>  shows = GetAllShows();
 
     if (!currentUser.isLogged) {
         CloseWindow();
@@ -167,6 +169,7 @@ int main() {
                     adminItems[i].base, adminItems[i].hover, false);
                 if (clicked) {
                     if (i == 0) RunMovieSearchScreen(movies);
+                    if (i == 1) RunShowtimesScreen(shows, movies);
                 }
             }
 
@@ -225,6 +228,7 @@ int main() {
                     items[i].locked);
                 if (clicked) {
                     if (i == 0) RunMovieSearchScreen(movies);
+                    if (i == 1) RunShowtimesScreen(shows, movies);
                 }
             }
 
@@ -237,5 +241,6 @@ int main() {
 
         EndDrawing();
     }
+
     CloseWindow();
 }
