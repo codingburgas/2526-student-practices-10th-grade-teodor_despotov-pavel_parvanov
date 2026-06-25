@@ -19,8 +19,6 @@ static const Color BTN_RED = { 100,  20,  20, 255 };
 static const Color BTN_RED_H = { 180,  40,  40, 255 };
 static const Color BTN_ADMIN = { 80,  20,  80, 255 };
 static const Color BTN_ADMIN_H = { 140,  40, 140, 255 };
-static const Color BTN_PURPLE = { 60,  20, 100, 255 };
-static const Color BTN_PURPLE_H = { 110,  40, 170, 255 };
 static bool IsHovered(int x, int y, int w, int h) {
     Vector2 m = GetMousePosition();
     return m.x >= x && m.x <= x + w && m.y >= y && m.y <= y + h;
@@ -113,7 +111,7 @@ int main() {
                 DrawSeparator("ADMIN  PANEL");
 
                 struct AdminItem { const char* icon; const char* label; Color base, hover; };
-                AdminItem adminItems[4];
+                AdminItem adminItems[3];
 
                 adminItems[0].icon = "+";  adminItems[0].label = "Add Movie";
                 adminItems[0].base = BTN_ADMIN;  adminItems[0].hover = BTN_ADMIN_H;
@@ -124,14 +122,11 @@ int main() {
                 adminItems[2].icon = "#";  adminItems[2].label = "View All Bookings";
                 adminItems[2].base = BTN_BLUE;   adminItems[2].hover = BTN_BLUE_H;
 
-                adminItems[3].icon = "!";  adminItems[3].label = "Send Notification";
-                adminItems[3].base = BTN_BLUE;   adminItems[3].hover = BTN_BLUE_H;
+                int startY = 160;
+                int btnH = 70;
+                int gap = 12;
 
-                int startY = 148;
-                int btnH = 64;
-                int gap = 10;
-
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 3; i++) {
                     int  y = startY + i * (btnH + gap);
                     bool clicked = DrawMenuButton(100, y, 580, btnH,
                         adminItems[i].icon, adminItems[i].label,
@@ -140,12 +135,12 @@ int main() {
                         skipFrames = 5;
                         if (i == 0) RunAddMovieScreen(movies);
                         if (i == 1) RunDeleteMovieScreen(movies);
-                        if (i == 2) RunMyBookingsScreen(GetBookings(), shows, movies, currentUser);
+                        if (i == 2) RunAllBookingsScreen(GetBookings(), shows, movies);
                     }
                 }
 
                 bool exitClicked = DrawMenuButton(
-                    100, startY + 4 * (btnH + gap) + 4,
+                    100, startY + 3 * (btnH + gap) + 4,
                     580, 44, "X", "Logout", BTN_RED, BTN_RED_H, false);
                 if (exitClicked && skipFrames <= 0) logout = true;
                 DrawFooter("Admin mode  |  Full access to all system functions");

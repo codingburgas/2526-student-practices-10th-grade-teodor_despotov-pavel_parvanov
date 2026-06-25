@@ -547,3 +547,222 @@ void RunMyBookingsScreen(
         EndDrawing();
     }
 }
+
+void RunAllBookingsScreen(
+    vector<Booking>& bookings,
+    vector<Show>& shows,
+    vector<Movie>& movies)
+{
+    int  scroll = 0;
+    bool back = false;
+    const int VISIBLE = 6;
+    const int ROW_H = 80;
+    const int ROW_GAP = 6;
+
+    while (!WindowShouldClose() && !back) {
+        BeginDrawing();
+        DrawTopBar("ALL BOOKINGS  -  ADMIN VIEW");
+
+        if (bookings.empty()) {
+            DrawText("No bookings in the system yet.",
+                (800 - MeasureText("No bookings in the system yet.", 20)) / 2,
+                300, 20, TEXT_MUTED);
+        }
+
+        string countStr = "Total bookings: " + to_string((int)bookings.size());
+        DrawText(countStr.c_str(), 110, 84, 14, TEXT_MUTED);
+
+        int startY = 104;
+
+        for (int i = scroll; i < min((int)bookings.size(), scroll + VISIBLE); i++) {
+            Booking& b = bookings[i];
+            int y = startY + (i - scroll) * (ROW_H + ROW_GAP);
+
+            string movieTitle = "Unknown";
+            string showTime = "";
+            string hall = "";
+
+            for (auto& s : shows) {
+                if (s.id == b.showId) {
+                    showTime = ShowTimeToString(s.time);
+                    hall = s.hall.name;
+                    for (auto& m : movies)
+                        if (m.id == s.movieId) { movieTitle = m.title; break; }
+                    break;
+                }
+            }
+
+            Rectangle rec = { 80, (float)y, 640, (float)ROW_H };
+            DrawRectangleRounded(rec, 0.12f, 8, BG_PANEL);
+            DrawRectangleRoundedLines(rec, 0.12f, 8, ACCENT_DIM);
+
+            string bid = "#" + to_string(b.id);
+            DrawText(bid.c_str(), 92, y + 6, 14, ACCENT_GOLD);
+            DrawText(b.username.c_str(), 140, y + 6, 16, TEXT_PRIMARY);
+
+            DrawText(movieTitle.c_str(), 92, y + 28, 16, ACCENT_GOLD);
+
+            string line2 = showTime + "  |  " + hall
+                + "  |  Seats: " + to_string((int)b.seatIds.size());
+            DrawText(line2.c_str(), 92, y + 50, 13, TEXT_MUTED);
+
+            string price = to_string((int)b.totalPrice) + " BGN  [Pay at counter]";
+            DrawText(price.c_str(), 580, y + 28, 13, ACCENT_GOLD);
+        }
+
+        if (scroll > 0)
+            if (DrawButton(340, 88, 120, 20, "^ Up", BTN_BLUE, BTN_BLUE_H))
+                scroll--;
+
+        if (scroll + VISIBLE < (int)bookings.size()) {
+            int sy = startY + VISIBLE * (ROW_H + ROW_GAP) + 4;
+            if (DrawButton(340, sy, 120, 20, "v Down", BTN_BLUE, BTN_BLUE_H))
+                scroll++;
+        }
+
+        if (DrawButton(310, 554, 180, 38, "Back", BTN_RED, BTN_RED_H))
+            back = true;
+
+        EndDrawing();
+    }
+}
+
+void RunSendNotificationScreen(vector<Movie>& movies) {
+    int  selectedType = -1;
+    int  selectedMovie = -1;
+    bool sent = false;
+    bool back = false;
+    int  skipFrames = 5;
+    int  scrollOffset = 0;
+
+    const char* notifTypes[] = {
+        "New Movie Released",
+        "Booking Confirmed",
+        "Booking Cancelled"
+    };
+
+    const int cardH = 56;
+    const int cardGap = 6;
+    const int listStartY = 280;
+    const int listEndY = 500;
+    const int visibleH = listEndY - listStartY;
+
+    while (!WindowShouldClose() && !back && !sent) {
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0 && selectedType == 0) {
+            int maxScroll = (int)movies.size() * (cardH + cardGap) - visibleH;
+            if (maxScroll < 0) maxScroll = 0;
+            scrollOffset -= (int)(wheel * 30);
+            if (scrollOffset < 0)          scrollOffset = 0;
+            if (scrollOffset > maxScroll)  scrollOffset = maxScroll;
+        }
+
+        Vector2 mp = GetMousePosition();
+
+        BeginDrawing();
+        DrawTopBar("SEND NOTIFICATION");
+
+        DrawText("Select notification type:", 110, 86, 16, TEXT_MUTED);
+
+        for (int i = 0; i < 3; i++) {
+            int y = 110 + i * 52;
+            bool hov = IsHovered(110, y, 580, 44);
+            bool sel = (selectedType == i);
+
+            Rectangle rec = { 110, (float)y, 580, 44 };
+            DrawRectangleRounded(rec, 0.12f, 8,
+                sel ? MakeColor(30, 60, 120, 255) :
+                hov ? MakeColor(25, 30, 50, 255) : BG_PANEL);
+            DrawRectangleRoundedLines(rec, 0.12f, 8,
+                sel ? ACCENT_GOLD : ACCENT_DIM);
+
+            DrawText(notifTypes[i], 130, y + 14, 16, sel ? ACCENT_GOLD : TEXT_PRIMARY);
+
+            if (hov && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && skipFrames <= 0) {
+                selectedType = i;
+                selectedMovie = -1;
+                scrollOffset = 0;
+            }
+        }
+
+        if (selectedType == 0) {
+            DrawLine(110, 272, 690, 272, ACCENT_DIM);
+            DrawText("Select movie:", 110, 276, 14, TEXT_MUTED);
+
+            BeginScissorMode(110, listStartY, 580, visibleH);
+
+            for (int i = 0; i < (int)movies.size(); i++) {
+                int y = listStartY + i * (cardH + cardGap) - scrollOffset;
+                if (y + cardH < listStartY || y > listEndY) continue;
+
+                bool hov = mp.x >= 110 && mp.x <= 690 && mp.y >= y && mp.y <= y + cardH;
+                bool sel = (selectedMovie == i);
+
+                Rectangle rec = { 110, (float)y, 580, (float)cardH };
+                DrawRectangleRounded(rec, 0.1f, 8,
+                    sel ? MakeColor(30, 60, 30, 255) :
+                    hov ? MakeColor(25, 35, 25, 255) : BG_PANEL);
+                DrawRectangleRoundedLines(rec, 0.1f, 8,
+                    sel ? BTN_GREEN_H : ACCENT_DIM);
+
+                DrawText(movies[i].title.c_str(), 126, y + 10, 16, TEXT_PRIMARY);
+                string info = GenreToString(movies[i].genre) + "  |  " + DateToString(movies[i].releaseDate);
+                DrawText(info.c_str(), 126, y + 32, 13, TEXT_MUTED);
+
+                if (hov && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && skipFrames <= 0)
+                    selectedMovie = i;
+            }
+
+            EndScissorMode();
+        }
+
+        bool canSend = (selectedType == 1 || selectedType == 2)
+            || (selectedType == 0 && selectedMovie >= 0);
+
+        DrawLine(110, 506, 690, 506, ACCENT_DIM);
+
+        if (canSend) {
+            string preview = "";
+            if (selectedType == 0 && selectedMovie >= 0)
+                preview = "NOTIFICATION: New movie \"" + movies[selectedMovie].title + "\" is now available!";
+            else if (selectedType == 1)
+                preview = "NOTIFICATION: Your booking has been confirmed!";
+            else if (selectedType == 2)
+                preview = "NOTIFICATION: Your booking has been cancelled.";
+
+            DrawText(preview.c_str(),
+                (800 - MeasureText(preview.c_str(), 13)) / 2, 512, 13,
+                MakeColor(100, 200, 120, 255));
+        }
+
+        bool sendBtn = DrawButton(110, 538, 280, 44, "Send Notification",
+            BTN_GREEN, BTN_GREEN_H, !canSend);
+        bool backBtn = DrawButton(410, 538, 280, 44, "Cancel",
+            BTN_RED, BTN_RED_H);
+
+        if (sendBtn && canSend && skipFrames <= 0) sent = true;
+        if (backBtn && skipFrames <= 0) back = true;
+
+        if (skipFrames > 0) skipFrames--;
+        EndDrawing();
+    }
+
+    if (sent) {
+        float timer = 3.0f;
+        while (!WindowShouldClose() && timer > 0) {
+            timer -= GetFrameTime();
+            BeginDrawing();
+            DrawTopBar("NOTIFICATION SENT");
+            DrawText("Notification sent successfully!",
+                (800 - MeasureText("Notification sent successfully!", 24)) / 2,
+                260, 24, BTN_GREEN_H);
+            DrawText("All users will see this notification.",
+                (800 - MeasureText("All users will see this notification.", 15)) / 2,
+                300, 15, TEXT_MUTED);
+            string closing = "Returning in " + to_string((int)timer + 1) + "...";
+            DrawText(closing.c_str(),
+                (800 - MeasureText(closing.c_str(), 13)) / 2, 360, 13, TEXT_MUTED);
+            EndDrawing();
+        }
+    }
+}
