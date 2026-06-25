@@ -91,94 +91,102 @@ static void DrawFooter(const char* hint) {
 int main() {
     InitWindow(800, 600, "Cinema Booking System");
     SetTargetFPS(60);
-    User          currentUser = runCinemaAuthSystem();
+
     vector<Movie> movies = GetAllMovies();
     vector<Show>  shows = GetAllShows();
-    if (!currentUser.isLogged) {
-        CloseWindow();
-        return 0;
-    }
-    int skipFrames = 5;
+
     while (!WindowShouldClose()) {
-        BeginDrawing();
-        ClearBackground(BG_DARK);
-        DrawHeader(currentUser);
-        if (currentUser.isAdmin) {
-            DrawSeparator("ADMIN  PANEL");
-            struct AdminItem { const char* icon; const char* label; Color base, hover; };
-            AdminItem adminItems[7];
-            adminItems[0].icon = "+";  adminItems[0].label = "Add Movie";
-            adminItems[0].base = BTN_ADMIN;  adminItems[0].hover = BTN_ADMIN_H;
-            adminItems[1].icon = "-";  adminItems[1].label = "Delete Movie";
-            adminItems[1].base = BTN_RED;    adminItems[1].hover = BTN_RED_H;
-            adminItems[2].icon = "+";  adminItems[2].label = "Add Show";
-            adminItems[2].base = BTN_PURPLE; adminItems[2].hover = BTN_PURPLE_H;
-            adminItems[3].icon = "-";  adminItems[3].label = "Delete Show";
-            adminItems[3].base = BTN_RED;    adminItems[3].hover = BTN_RED_H;
-            adminItems[4].icon = "*";  adminItems[4].label = "Update Show";
-            adminItems[4].base = BTN_PURPLE; adminItems[4].hover = BTN_PURPLE_H;
-            adminItems[5].icon = "#";  adminItems[5].label = "View All Bookings";
-            adminItems[5].base = BTN_BLUE;   adminItems[5].hover = BTN_BLUE_H;
-            adminItems[6].icon = "!";  adminItems[6].label = "Send Notification";
-            adminItems[6].base = BTN_BLUE;   adminItems[6].hover = BTN_BLUE_H;
-            int startY = 122;
-            int btnH = 48;
-            int gap = 6;
-            for (int i = 0; i < 7; i++) {
-                int  y = startY + i * (btnH + gap);
-                bool clicked = DrawMenuButton(100, y, 580, btnH,
-                    adminItems[i].icon, adminItems[i].label,
-                    adminItems[i].base, adminItems[i].hover, false);
-                if (clicked && skipFrames <= 0) {
-                    skipFrames = 5;
-                    if (i == 0) RunMovieSearchScreen(movies);
-                    if (i == 1) RunShowtimesScreen(shows, movies);
-                    if (i == 5) RunMyBookingsScreen(GetBookings(), shows, movies, currentUser);
+        User currentUser = runCinemaAuthSystem();
+
+        if (!currentUser.isLogged || WindowShouldClose())
+            break;
+
+        bool logout = false;
+        int  skipFrames = 5;
+
+        while (!WindowShouldClose() && !logout) {
+            BeginDrawing();
+            ClearBackground(BG_DARK);
+            DrawHeader(currentUser);
+            if (currentUser.isAdmin) {
+                DrawSeparator("ADMIN  PANEL");
+                struct AdminItem { const char* icon; const char* label; Color base, hover; };
+                AdminItem adminItems[7];
+                adminItems[0].icon = "+";  adminItems[0].label = "Add Movie";
+                adminItems[0].base = BTN_ADMIN;  adminItems[0].hover = BTN_ADMIN_H;
+                adminItems[1].icon = "-";  adminItems[1].label = "Delete Movie";
+                adminItems[1].base = BTN_RED;    adminItems[1].hover = BTN_RED_H;
+                adminItems[2].icon = "+";  adminItems[2].label = "Add Show";
+                adminItems[2].base = BTN_PURPLE; adminItems[2].hover = BTN_PURPLE_H;
+                adminItems[3].icon = "-";  adminItems[3].label = "Delete Show";
+                adminItems[3].base = BTN_RED;    adminItems[3].hover = BTN_RED_H;
+                adminItems[4].icon = "*";  adminItems[4].label = "Update Show";
+                adminItems[4].base = BTN_PURPLE; adminItems[4].hover = BTN_PURPLE_H;
+                adminItems[5].icon = "#";  adminItems[5].label = "View All Bookings";
+                adminItems[5].base = BTN_BLUE;   adminItems[5].hover = BTN_BLUE_H;
+                adminItems[6].icon = "!";  adminItems[6].label = "Send Notification";
+                adminItems[6].base = BTN_BLUE;   adminItems[6].hover = BTN_BLUE_H;
+                int startY = 122;
+                int btnH = 48;
+                int gap = 6;
+                for (int i = 0; i < 7; i++) {
+                    int  y = startY + i * (btnH + gap);
+                    bool clicked = DrawMenuButton(100, y, 580, btnH,
+                        adminItems[i].icon, adminItems[i].label,
+                        adminItems[i].base, adminItems[i].hover, false);
+                    if (clicked && skipFrames <= 0) {
+                        skipFrames = 5;
+                        if (i == 0) RunAddMovieScreen(movies);
+                        if (i == 1) RunDeleteMovieScreen(movies);
+                        if (i == 2) RunShowtimesScreen(shows, movies);
+                        if (i == 5) RunMyBookingsScreen(GetBookings(), shows, movies, currentUser);
+                    }
                 }
+                bool exitClicked = DrawMenuButton(
+                    100, startY + 7 * (btnH + gap) + 4,
+                    580, 44, "X", "Logout", BTN_RED, BTN_RED_H, false);
+                if (exitClicked && skipFrames <= 0) logout = true;
+                DrawFooter("Admin mode  |  Full access to all system functions");
             }
-            bool exitClicked = DrawMenuButton(
-                100, startY + 7 * (btnH + gap) + 4,
-                580, 44, "X", "Logout", BTN_RED, BTN_RED_H, false);
-            if (exitClicked && skipFrames <= 0) break;
-            DrawFooter("Admin mode  |  Full access to all system functions");
-        }
-        else {
-            DrawSeparator("MAIN  MENU");
-            struct MenuItem { const char* icon; const char* label; Color base, hover; bool locked; };
-            MenuItem items[4];
-            items[0].icon = "?";  items[0].label = "Search Movies";
-            items[0].base = BTN_BLUE; items[0].hover = BTN_BLUE_H; items[0].locked = false;
-            items[1].icon = "#";  items[1].label = "View Showtimes";
-            items[1].base = BTN_BLUE; items[1].hover = BTN_BLUE_H; items[1].locked = false;
-            items[2].icon = "+";  items[2].label = "Make a Booking";
-            items[2].base = BTN_BLUE; items[2].hover = BTN_BLUE_H; items[2].locked = currentUser.isGuest;
-            items[3].icon = "@";  items[3].label = "My Bookings";
-            items[3].base = BTN_BLUE; items[3].hover = BTN_BLUE_H; items[3].locked = currentUser.isGuest;
-            int startY = 148;
-            int btnH = 64;
-            int gap = 10;
-            for (int i = 0; i < 4; i++) {
-                int  y = startY + i * (btnH + gap);
-                bool clicked = DrawMenuButton(100, y, 580, btnH,
-                    items[i].icon, items[i].label,
-                    items[i].base, items[i].hover,
-                    items[i].locked);
-                if (clicked && skipFrames <= 0) {
-                    skipFrames = 5;
-                    if (i == 0) RunMovieSearchScreen(movies);
-                    if (i == 1) RunShowtimesScreen(shows, movies);
-                    if (i == 2) RunBookingSelectShow(shows, movies, currentUser);
-                    if (i == 3) RunMyBookingsScreen(GetBookings(), shows, movies, currentUser);
+            else {
+                DrawSeparator("MAIN  MENU");
+                struct MenuItem { const char* icon; const char* label; Color base, hover; bool locked; };
+                MenuItem items[4];
+                items[0].icon = "?";  items[0].label = "Search Movies";
+                items[0].base = BTN_BLUE; items[0].hover = BTN_BLUE_H; items[0].locked = false;
+                items[1].icon = "#";  items[1].label = "View Showtimes";
+                items[1].base = BTN_BLUE; items[1].hover = BTN_BLUE_H; items[1].locked = false;
+                items[2].icon = "+";  items[2].label = "Make a Booking";
+                items[2].base = BTN_BLUE; items[2].hover = BTN_BLUE_H; items[2].locked = currentUser.isGuest;
+                items[3].icon = "@";  items[3].label = "My Bookings";
+                items[3].base = BTN_BLUE; items[3].hover = BTN_BLUE_H; items[3].locked = currentUser.isGuest;
+                int startY = 148;
+                int btnH = 64;
+                int gap = 10;
+                for (int i = 0; i < 4; i++) {
+                    int  y = startY + i * (btnH + gap);
+                    bool clicked = DrawMenuButton(100, y, 580, btnH,
+                        items[i].icon, items[i].label,
+                        items[i].base, items[i].hover,
+                        items[i].locked);
+                    if (clicked && skipFrames <= 0) {
+                        skipFrames = 5;
+                        if (i == 0) RunMovieSearchScreen(movies);
+                        if (i == 1) RunShowtimesScreen(shows, movies);
+                        if (i == 2) RunBookingSelectShow(shows, movies, currentUser);
+                        if (i == 3) RunMyBookingsScreen(GetBookings(), shows, movies, currentUser);
+                    }
                 }
+                bool exitClicked = DrawMenuButton(
+                    100, startY + 4 * (btnH + gap) + 4,
+                    580, 44, "X", "Exit", BTN_RED, BTN_RED_H, false);
+                if (exitClicked && skipFrames <= 0) logout = true;
+                DrawFooter("Click any option to continue  |  Locked options require an account");
             }
-            bool exitClicked = DrawMenuButton(
-                100, startY + 4 * (btnH + gap) + 4,
-                580, 44, "X", "Exit", BTN_RED, BTN_RED_H, false);
-            if (exitClicked && skipFrames <= 0) break;
-            DrawFooter("Click any option to continue  |  Locked options require an account");
+            if (skipFrames > 0) skipFrames--;
+            EndDrawing();
         }
-        if (skipFrames > 0) skipFrames--;
-        EndDrawing();
     }
+
     CloseWindow();
 }

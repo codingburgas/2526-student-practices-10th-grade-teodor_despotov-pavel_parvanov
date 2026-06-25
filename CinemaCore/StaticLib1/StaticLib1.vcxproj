@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Booking.cpp" />
     <ClCompile Include="Movie.cpp" />
+    <ClCompile Include="Movieadmin.cpp" />
     <ClCompile Include="Show.cpp" />
   </ItemGroup>
   <ItemGroup>
